@@ -2,7 +2,9 @@
 package com.github.gungnirlaevatain.mq;
 
 import com.github.gungnirlaevatain.mq.consumer.kafka.KafkaConsumerAutoConfig;
+import com.github.gungnirlaevatain.mq.consumer.rocketmq.RocketMqConsumerAutoConfig;
 import com.github.gungnirlaevatain.mq.producer.kafka.KafkaProducerAutoConfig;
+import com.github.gungnirlaevatain.mq.producer.rocketmq.RocketMqProducerAutoConfig;
 import lombok.Getter;
 
 public enum MqType {
@@ -10,6 +12,7 @@ public enum MqType {
     /**
      * 消息队列类型.
      */
+    RocketMQ("rocketmq", RocketMqConsumerAutoConfig.class, RocketMqProducerAutoConfig.class),
     Kafka("kafka", KafkaConsumerAutoConfig.class, KafkaProducerAutoConfig.class);
 
     @Getter

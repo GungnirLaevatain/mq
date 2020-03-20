@@ -89,26 +89,18 @@ public class KafkaConsumerAutoConfig {
 
     private Map<String, Object> consumerConfigs(KafkaConsumerProperty consumerProperty) {
         Map<String, Object> propsMap = new HashMap<>(8);
-        propsMap.put(org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                consumerProperty.getServer());
-        propsMap.put(org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG,
-                consumerProperty.isEnableAutoCommit());
-        propsMap.put(org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG,
-                consumerProperty.getAutoCommitIntervalMs());
-        propsMap.put(org.apache.kafka.clients.consumer.ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG,
-                consumerProperty.getSessionTimeoutMs());
-        propsMap.put(org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
-                consumerProperty.getKeyDeserializerClass());
-        propsMap.put(org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
-                consumerProperty.getValueDeserializerClass());
+        propsMap.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, consumerProperty.getServer());
+        propsMap.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, consumerProperty.isEnableAutoCommit());
+        propsMap.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, consumerProperty.getAutoCommitIntervalMs());
+        propsMap.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, consumerProperty.getSessionTimeoutMs());
+        propsMap.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, consumerProperty.getKeyDeserializerClass());
+        propsMap.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, consumerProperty.getValueDeserializerClass());
         if (consumerProperty.getListenerType() == ListenerType.BROADCASTING) {
-            propsMap.put(ConsumerConfig.GROUP_ID_CONFIG,
-                    consumerProperty.getGroupId() + "@" + UUID.randomUUID().toString());
+            propsMap.put(ConsumerConfig.GROUP_ID_CONFIG, consumerProperty.getGroupId() + "@" + UUID.randomUUID().toString());
         } else {
             propsMap.put(ConsumerConfig.GROUP_ID_CONFIG, consumerProperty.getGroupId());
         }
-        propsMap.put(org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
-                consumerProperty.getAutoOffsetReset());
+        propsMap.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, consumerProperty.getAutoOffsetReset());
         return propsMap;
 
     }
