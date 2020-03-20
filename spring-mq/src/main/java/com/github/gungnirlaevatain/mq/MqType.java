@@ -1,11 +1,16 @@
 
 package com.github.gungnirlaevatain.mq;
 
+import com.github.gungnirlaevatain.mq.consumer.kafka.KafkaConsumerAutoConfig;
+import com.github.gungnirlaevatain.mq.producer.kafka.KafkaProducerAutoConfig;
 import lombok.Getter;
 
 public enum MqType {
 
-    ;
+    /**
+     * 消息队列类型.
+     */
+    Kafka("kafka", KafkaConsumerAutoConfig.class, KafkaProducerAutoConfig.class);
 
     @Getter
     private String name;
