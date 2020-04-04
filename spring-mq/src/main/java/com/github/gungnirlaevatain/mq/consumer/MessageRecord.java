@@ -1,5 +1,3 @@
-
-
 package com.github.gungnirlaevatain.mq.consumer;
 
 import lombok.AllArgsConstructor;
@@ -14,7 +12,7 @@ public class MessageRecord {
     private String topic;
     private Object keys;
     private String tags;
-    private String body;
+    private byte[] body;
     private long timestamp;
     private int delay;
 

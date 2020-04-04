@@ -1,5 +1,3 @@
-
-
 package com.github.gungnirlaevatain.mq.producer.rabbitmq;
 
 import com.github.gungnirlaevatain.mq.producer.Producer;
@@ -16,14 +14,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 import java.util.Objects;
 
-@Configuration
 @EnableConfigurationProperties({RabbitMqProducerProperty.class, ProducerProperty.class})
 @AutoConfigureBefore(RabbitAutoConfiguration.class)
 public class RabbitMqProducerAutoConfig {
@@ -42,7 +38,7 @@ public class RabbitMqProducerAutoConfig {
     @Bean
     @ConditionalOnSingleCandidate(ConnectionFactory.class)
     @ConditionalOnMissingBean(RabbitTemplate.class)
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) throws IllegalAccessException, InstantiationException{
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) throws IllegalAccessException, InstantiationException {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         if (mqProperty.getMessageConverter() != null) {
             rabbitTemplate.setMessageConverter(mqProperty.getMessageConverter().newInstance());

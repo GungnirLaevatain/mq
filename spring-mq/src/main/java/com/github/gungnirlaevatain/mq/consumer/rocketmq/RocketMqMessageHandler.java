@@ -1,4 +1,3 @@
-
 package com.github.gungnirlaevatain.mq.consumer.rocketmq;
 
 import com.alibaba.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
@@ -12,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
@@ -58,7 +56,7 @@ public class RocketMqMessageHandler extends AbstractMqMessageHandler<MessageExt>
     @Override
     protected MessageRecord getMessageRecord(MessageExt messageExt) {
         return new MessageRecord(messageExt.getTopic(), messageExt.getKeys(),
-                messageExt.getTags(), new String(messageExt.getBody(), StandardCharsets.UTF_8),
+                messageExt.getTags(), messageExt.getBody(),
                 messageExt.getStoreTimestamp(), messageExt.getDelayTimeLevel());
     }
 

@@ -1,10 +1,13 @@
-
 package com.github.gungnirlaevatain.mq.consumer.rabbitmq;
 
 import com.github.gungnirlaevatain.mq.consumer.ConsumerProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListenerAnnotationBeanPostProcessor;
-import org.springframework.amqp.rabbit.config.*;
+import org.springframework.amqp.rabbit.config.AbstractRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
+import org.springframework.amqp.rabbit.config.RabbitListenerConfigUtils;
+import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.connection.RabbitConnectionFactoryBean;
@@ -18,13 +21,11 @@ import org.springframework.boot.autoconfigure.amqp.RabbitProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 @Slf4j
-@Configuration
 @EnableConfigurationProperties({RabbitMqConsumerProperty.class, ConsumerProperty.class})
 @AutoConfigureBefore(RabbitAutoConfiguration.class)
 public class RabbitMqConsumerAutoConfig {

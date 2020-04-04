@@ -1,4 +1,3 @@
-
 package com.github.gungnirlaevatain.mq.consumer.rabbitmq;
 
 import com.github.gungnirlaevatain.mq.consumer.AbstractMqMessageHandler;
@@ -14,7 +13,6 @@ import org.springframework.amqp.support.converter.MessageConverter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Data
@@ -45,7 +43,7 @@ public class RabbitMqMessageHandler extends AbstractMqMessageHandler<Message> {
     @Override
     protected MessageRecord getMessageRecord(Message msg) {
         return new MessageRecord(msg.getMessageProperties().getReceivedExchange(), null, msg.getMessageProperties().getConsumerQueue(),
-                new String(msg.getBody(), StandardCharsets.UTF_8), 0, 0);
+                msg.getBody(), 0, 0);
     }
 
     @Override

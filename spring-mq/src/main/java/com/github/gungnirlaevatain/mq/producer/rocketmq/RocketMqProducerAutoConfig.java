@@ -1,4 +1,3 @@
-
 package com.github.gungnirlaevatain.mq.producer.rocketmq;
 
 import com.github.gungnirlaevatain.mq.MqType;
@@ -9,9 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
 @EnableConfigurationProperties({RocketMqProducerProperty.class, ProducerProperty.class})
 @Slf4j
 public class RocketMqProducerAutoConfig {

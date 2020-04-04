@@ -1,37 +1,34 @@
-
-
 package com.github.gungnirlaevatain.mq.consumer.kafka;
 
-import com.github.gungnirlaevatain.mq.MqException;
 import com.github.gungnirlaevatain.mq.consumer.ConsumerProperty;
-import com.github.gungnirlaevatain.mq.consumer.ListenerType;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.kafka.annotation.KafkaListenerAnnotationBeanPostProcessor;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerConfigUtils;
-import org.springframework.kafka.config.KafkaListenerContainerFactory;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.AfterRollbackProcessor;
+import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.ErrorHandler;
-import org.springframework.kafka.listener.adapter.RecordFilterStrategy;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
+import org.springframework.kafka.transaction.KafkaAwareTransactionManager;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.time.Duration;
 
-@Configuration
-@EnableConfigurationProperties({KafkaConsumerProperty.class, ConsumerProperty.class})
-@SuppressWarnings("unchecked")
+
+@EnableConfigurationProperties({ConsumerProperty.class})
 public class KafkaConsumerAutoConfig {
 
-    @Autowired
-    private KafkaConsumerProperty kafkaConsumerProperty;
 
     @Bean(name = KafkaListenerConfigUtils.KAFKA_LISTENER_ANNOTATION_PROCESSOR_BEAN_NAME)
     public KafkaListenerAnnotationBeanPostProcessor kafkaListenerAnnotationBeanPostProcessor() {
@@ -43,65 +40,72 @@ public class KafkaConsumerAutoConfig {
         return new KafkaListenerEndpointRegistry();
     }
 
-    @Bean(name = KafkaListenerAnnotationBeanPostProcessor.DEFAULT_KAFKA_LISTENER_CONTAINER_FACTORY_BEAN_NAME)
-    public KafkaListenerContainerFactory defaultKafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory(kafkaConsumerProperty));
-        factory.setConcurrency(kafkaConsumerProperty.getConcurrency());
-        factory.getContainerProperties().setPollTimeout(kafkaConsumerProperty.getPollTimeout());
-        factory.getContainerProperties().setAckMode(kafkaConsumerProperty.getAckMode());
+    @ConditionalOnBean(KafkaConsumerAutoConfig.class)
+    @Import(KafkaAutoConfiguration.class)
+    @Configuration
+    public static class kafkaListenerContainerConfiguration {
+        @Autowired
+        private KafkaProperties properties;
 
-        Class<RecordFilterStrategy> recordFilterStrategy = kafkaConsumerProperty.getRecordFilter();
+        @Autowired
+        private RecordMessageConverter messageConverter;
 
-        if (recordFilterStrategy != null) {
-            try {
-                factory.setRecordFilterStrategy(recordFilterStrategy.newInstance());
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new MqException(e);
-            }
-        } else {
-            factory.setRecordFilterStrategy(new DafaultRecordFilterStrategy());
+        @Autowired
+        private KafkaTemplate<Object, Object> kafkaTemplate;
+
+        @Autowired
+        private KafkaAwareTransactionManager<Object, Object> transactionManager;
+
+        @Autowired
+        private ErrorHandler errorHandler;
+
+        @Autowired
+        private AfterRollbackProcessor<Object, Object> afterRollbackProcessor;
+
+        @Bean
+        @ConditionalOnMissingBean(name = "kafkaListenerContainerFactory")
+        public ConcurrentKafkaListenerContainerFactory<?, ?> kafkaListenerContainerFactory(ConsumerFactory<Object, Object> kafkaConsumerFactory) {
+            ConcurrentKafkaListenerContainerFactory<Object, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+            configure(factory, kafkaConsumerFactory);
+            return factory;
         }
 
-        Class<RecordMessageConverter> converter = kafkaConsumerProperty.getMessageConverter();
-        if (converter != null) {
-            try {
-                factory.setMessageConverter(converter.newInstance());
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new MqException(e);
-            }
+
+        public void configure(ConcurrentKafkaListenerContainerFactory<Object, Object> listenerFactory,
+                              ConsumerFactory<Object, Object> consumerFactory) {
+            listenerFactory.setConsumerFactory(consumerFactory);
+            configureListenerFactory(listenerFactory);
+            configureContainer(listenerFactory.getContainerProperties());
         }
 
-        Class<ErrorHandler> errorHandler = kafkaConsumerProperty.getErrorHandler();
-        if (errorHandler != null) {
-            try {
-                factory.setErrorHandler(errorHandler.newInstance());
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new MqException(e);
-            }
+        private void configureListenerFactory(ConcurrentKafkaListenerContainerFactory<Object, Object> factory) {
+            PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+            KafkaProperties.Listener properties = this.properties.getListener();
+            map.from(properties::getConcurrency).to(factory::setConcurrency);
+            map.from(messageConverter).to(factory::setMessageConverter);
+            map.from(kafkaTemplate).to(factory::setReplyTemplate);
+            map.from(properties::getType)
+                    .whenEqualTo(KafkaProperties.Listener.Type.BATCH)
+                    .toCall(() -> factory.setBatchListener(true));
+            map.from(errorHandler).to(factory::setErrorHandler);
+            map.from(afterRollbackProcessor).to(factory::setAfterRollbackProcessor);
         }
-        return factory;
+
+        private void configureContainer(ContainerProperties container) {
+            PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+            KafkaProperties.Listener properties = this.properties.getListener();
+            map.from(properties::getAckMode).to(container::setAckMode);
+            map.from(properties::getClientId).to(container::setClientId);
+            map.from(properties::getAckCount).to(container::setAckCount);
+            map.from(properties::getAckTime).as(Duration::toMillis).to(container::setAckTime);
+            map.from(properties::getPollTimeout).as(Duration::toMillis).to(container::setPollTimeout);
+            map.from(properties::getNoPollThreshold).to(container::setNoPollThreshold);
+            map.from(properties::getIdleEventInterval).as(Duration::toMillis).to(container::setIdleEventInterval);
+            map.from(properties::getMonitorInterval).as(Duration::getSeconds).as(Number::intValue)
+                    .to(container::setMonitorInterval);
+            map.from(properties::getLogContainerConfig).to(container::setLogContainerConfig);
+            map.from(transactionManager).to(container::setTransactionManager);
+        }
     }
 
-    private ConsumerFactory<String, String> consumerFactory(KafkaConsumerProperty consumerProperty) {
-        return new DefaultKafkaConsumerFactory<>(consumerConfigs(consumerProperty));
-    }
-
-    private Map<String, Object> consumerConfigs(KafkaConsumerProperty consumerProperty) {
-        Map<String, Object> propsMap = new HashMap<>(8);
-        propsMap.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, consumerProperty.getServer());
-        propsMap.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, consumerProperty.isEnableAutoCommit());
-        propsMap.put(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, consumerProperty.getAutoCommitIntervalMs());
-        propsMap.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, consumerProperty.getSessionTimeoutMs());
-        propsMap.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, consumerProperty.getKeyDeserializerClass());
-        propsMap.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, consumerProperty.getValueDeserializerClass());
-        if (consumerProperty.getListenerType() == ListenerType.BROADCASTING) {
-            propsMap.put(ConsumerConfig.GROUP_ID_CONFIG, consumerProperty.getGroupId() + "@" + UUID.randomUUID().toString());
-        } else {
-            propsMap.put(ConsumerConfig.GROUP_ID_CONFIG, consumerProperty.getGroupId());
-        }
-        propsMap.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, consumerProperty.getAutoOffsetReset());
-        return propsMap;
-
-    }
 }
