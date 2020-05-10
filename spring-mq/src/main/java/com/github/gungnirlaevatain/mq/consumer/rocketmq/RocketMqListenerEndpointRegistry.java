@@ -1,4 +1,3 @@
-
 package com.github.gungnirlaevatain.mq.consumer.rocketmq;
 
 import com.alibaba.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -14,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.SmartLifecycle;
+import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
@@ -29,6 +29,8 @@ public class RocketMqListenerEndpointRegistry implements DisposableBean, SmartLi
     private Map<String, RocketMqMessageDispatch> dispatchMap = new HashMap<>(16);
     private volatile boolean isRunning;
 
+    @Autowired
+    private Environment environment;
 
     @Autowired
     private RocketMqConsumerProperty consumerProperty;
@@ -92,7 +94,7 @@ public class RocketMqListenerEndpointRegistry implements DisposableBean, SmartLi
         if (StringUtils.isEmpty(groupName)) {
             groupName = consumerProperty.getConsumerGroup();
         }
-
+        groupName = environment.resolvePlaceholders(groupName);
         if (listener.topics().length > 0) {
             String tag = createTags(listener.tags());
             RocketMqMessageDispatch dispatch = dispatchMap.getOrDefault(groupName, new RocketMqMessageDispatch(groupName));
@@ -105,6 +107,7 @@ public class RocketMqListenerEndpointRegistry implements DisposableBean, SmartLi
                 consumer.registerMessageListener((MessageListenerOrderly) dispatch::dispatch);
             }
             for (String topic : listener.topics()) {
+                topic = environment.resolvePlaceholders(topic);
                 try {
                     dispatch.registerHandler(topic, tag, handler);
                     Set<String> tagSet = dispatch.getTagByTopic(topic);
@@ -167,7 +170,7 @@ public class RocketMqListenerEndpointRegistry implements DisposableBean, SmartLi
                 if ("*".equals(tags[i])) {
                     return "*";
                 }
-                sb.append(tags[i]).append("||");
+                sb.append(environment.resolvePlaceholders(tags[i])).append("||");
             }
             sb.append(tags[tags.length - 1]);
         }
