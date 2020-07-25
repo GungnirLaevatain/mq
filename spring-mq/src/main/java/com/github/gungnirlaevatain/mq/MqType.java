@@ -1,4 +1,3 @@
-
 package com.github.gungnirlaevatain.mq;
 
 import com.github.gungnirlaevatain.mq.consumer.kafka.KafkaConsumerAutoConfig;
@@ -12,6 +11,7 @@ public enum MqType {
     /**
      * 消息队列类型.
      */
+    Mock("mock", RocketMqConsumerAutoConfig.class, RocketMqProducerAutoConfig.class),
     RocketMQ("rocketmq", RocketMqConsumerAutoConfig.class, RocketMqProducerAutoConfig.class),
     Kafka("kafka", KafkaConsumerAutoConfig.class, KafkaProducerAutoConfig.class);
 

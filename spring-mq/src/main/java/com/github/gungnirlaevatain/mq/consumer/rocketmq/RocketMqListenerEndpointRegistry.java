@@ -58,28 +58,28 @@ public class RocketMqListenerEndpointRegistry implements DisposableBean, SmartLi
     @Override
     public void start() {
         isRunning = true;
-        mqConsumerMap.forEach(
-                (k, v) -> {
-                    try {
-                        v.start();
-                        log.info("RocketMQ consumer [{}] start", k);
-                    } catch (MQClientException e) {
-                        stop();
-                        throw new MqException(e);
-                    }
-                }
-        );
+        for (Map.Entry<String, MQPushConsumer> entry : mqConsumerMap.entrySet()) {
+            try {
+                entry.getValue().start();
+                log.info("RocketMQ consumer [{}] start", entry.getKey());
+            } catch (MQClientException e) {
+                stop();
+                throw new MqException(e);
+            }
+        }
     }
 
     @Override
     public void stop() {
         isRunning = false;
-        mqConsumerMap.forEach(
-                (k, v) -> {
-                    v.shutdown();
-                    log.info("RocketMQ consumer [{}] stop", k);
-                }
-        );
+        for (Map.Entry<String, MQPushConsumer> entry : mqConsumerMap.entrySet()) {
+            try {
+                entry.getValue().shutdown();
+                log.info("RocketMQ consumer [{}] stop", entry.getKey());
+            } catch (Exception e) {
+                log.error("RocketMQ consumer [{}] stop failed", entry.getKey());
+            }
+        }
     }
 
     @Override
